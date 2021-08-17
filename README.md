@@ -19,6 +19,30 @@ This is a python binding for the Microsoft SEAL library.
 
 
 ## Build
+* #### Anaconda
+  ```shell
+  # Get the repository or download from the releases
+  git clone https://github.com/Huelse/SEAL-Python.git
+  cd SEAL-Python
+ 
+  # Create the conda-environment, SEAL-Python
+  conda env create -f environment.yml
+  conda activate SEAL-Python
+
+  # Init the SEAL and pybind11
+  git submodule update --init --recursive
+  # Get the newest repositories (unnecessary)
+  # git submodule update --remote
+  
+  # Build the SEAL lib
+  cd SEAL
+  cmake -S . -B build -DSEAL_USE_MSGSL=OFF -DSEAL_USE_ZLIB=OFF -DSEAL_USE_ZSTD=OFF
+  cmake --build build
+  cd ..
+
+  # Run the setup.py
+  python3 setup.py build_ext -i
+  ```
 * #### Linux
   Clang++ (>= 5.0) or GNU G++ (>= 6.0), CMake (>= 3.12)
 
