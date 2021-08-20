@@ -12,11 +12,12 @@ from examples.seal_helper import *
 
 FIX_CIPHER_ZERO = False
 
-def HE_naive_conv2d(x, kernel, evaluator, padding=0, stride=1):     
+def HE_naive_conv2d(x, kernel, evaluator, cipher_dummy, padding=0, stride=1):     
     # TODO: how to get cipher_zero, 
     #       check SEAL_THROW_ON_TRANSPARENT_CIPHERTEXT option at
     #               https://github.com/microsoft/SEAL/tree/607801221be3f8499d9d8bd93c06f8b201c98e0b#advanced-cmake-options
-    cipher_zero = evaluator.sub(x[0][0][0][0], x[0][0][0][1])
+    # cipher_zero = evaluator.sub(x[0][0][0][0], x[0][0][0][1])
+    cipher_zero = cipher_dummy
 
     npad = ((0, 0), (0, 0), (padding, padding), (padding, padding))
     pad_x = np.pad(x, npad, mode='constant', constant_values=cipher_zero)

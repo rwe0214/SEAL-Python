@@ -6,14 +6,14 @@ from conv import *
 
 OUTPUT_VISIBLE = False
 
-
 def test(name, test_conv2d, **kwarg):
     return _test(name, test_conv2d, **kwarg)
 
 def _test(name, test_conv2d, batch=1, in_channel=1, out_channel=1, width=32, height=32, kernel_size=3, padding=1, stride=1):
     x = np.random.rand(batch, in_channel, width, height)*255.0
     kernel = np.random.rand(out_channel, in_channel, kernel_size, kernel_size)*255.0
-    
+    dummy_value = 1e-10
+
     torch_conv2d = nn.Conv2d(in_channel, out_channel, kernel_size=kernel_size, stride=stride, padding=padding, bias=False)
     torch_conv2d.weight = nn.Parameter(torch.from_numpy(kernel))
 
@@ -54,16 +54,19 @@ def _test(name, test_conv2d, batch=1, in_channel=1, out_channel=1, width=32, hei
 
         start = time.time()
         plain_x = modify_ndarray(ckks_encoder.encode, [x, scale])
+        plain_dummy = ckks_encoder.encode(dummy_value, scale)
         plain_kernel = modify_ndarray(ckks_encoder.encode, [kernel, scale])
         cipher_x = modify_ndarray(encryptor.encrypt, [plain_x])
+        cipher_dummy = encryptor.encrypt(plain_dummy)
         # cipher_kernel = modify_ndarray(encryptor.encrypt, [plain_kernel])
         end = time.time()
         print(f'Encrypt time: {(end-start):3f} s')
         x = cipher_x
         kernel = plain_kernel
+        dummy_value = cipher_dummy
     
     start = time.time()
-    test_conv2d_result = test_conv2d(x, kernel, evaluator, padding=padding, stride=stride)
+    test_conv2d_result = test_conv2d(x, kernel, evaluator, dummy_value, padding=padding, stride=stride)
     end = time.time()
     print(f'{name} time cost: {((end-start)*1000.):3f} ms')
     
