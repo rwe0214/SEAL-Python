@@ -4,11 +4,9 @@ from torch import nn
 import time
 import math
 
-import sys
-sys.path.append('..')
+from utils import HE_array_sum, modify_ndarray
 
-from seal import *
-from examples.seal_helper import *
+# from seal import *
 
 # Use cipher dummy to approximate cipher zero
 FIX_CIPHER_ZERO = True
@@ -32,31 +30,8 @@ def HE_naive_conv2d(x, kernel, evaluator, cipher_dummy, padding=0, stride=1):
             for w in range(result.shape[2]):
                 for h in range(result.shape[3]):
                     window = pad_x[b][:, w: w + kernel.shape[2], h: h + kernel.shape[3]]
-                    result[b][c, w, h] = HE_array_sum(HE_dot_product_plain(window, kernel[c], evaluator), evaluator)
-    return result
-
-def HE_dot_product_plain(cipher_x, plain_y, evaluator):
-    '''
-        Maybe there are some apis to speedup
-    '''
-    assert(cipher_x.shape == plain_y.shape)
-
-    result = np.empty(cipher_x.shape, dtype='object')
-    for c in range(cipher_x.shape[0]):
-        for w in range(cipher_x.shape[1]):
-            for h in range(cipher_x.shape[2]):
-                result[c][w][h] = evaluator.multiply_plain(cipher_x[c][w][h], plain_y[c][w][h])
-    return result
-
-def HE_array_sum(cipher_x, evaluator):
-    assert(len(cipher_x.shape) == 3)
-
-    result = cipher_x[0][0][0]
-    for c in range(cipher_x.shape[0]):
-        for w in range(cipher_x.shape[1]):
-            for h in range(cipher_x.shape[2]):
-                result = evaluator.add(result, cipher_x[c][w][h])
-    result = evaluator.sub(result, cipher_x[0][0][0])
+                    # result[b][c, w, h] = HE_array_sum(HE_dot_product_plain(window, kernel[c], evaluator), evaluator)
+                    result[b][c, w, h] = HE_array_sum(modify_ndarray(evaluator.multiply_plain, [window, kernel[c]], dim=3), evaluator)
     return result
 
 def HE_conv2d(x, kernel, *args, **kwarg):

@@ -1,9 +1,9 @@
 import time
 import sys
-from seal import *
 import numpy as np
 
 sys.path.append('..')
+from seal import *
 from examples.seal_helper import *
 
 from matplotlib import pyplot as plt

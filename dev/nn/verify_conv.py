@@ -1,8 +1,12 @@
 import time
 import sys
 import argparse
+import os
 
-from nn.conv import *
+sys.path.append('/home/swchiu/workspace/SEAL-Python')
+from seal import *
+from conv import *
+from utils import *
 
 OUTPUT_VISIBLE = False
 
@@ -53,10 +57,10 @@ def _test(name, test_conv2d, batch=1, in_channel=1, out_channel=1, width=32, hei
         decryptor = Decryptor(context, secret_key)
 
         start = time.time()
-        plain_x = modify_ndarray(ckks_encoder.encode, [x, scale])
+        plain_x = modify_ndarray(ckks_encoder.encode, [x, scale], dim=4)
         plain_dummy = ckks_encoder.encode(dummy_value, scale)
-        plain_kernel = modify_ndarray(ckks_encoder.encode, [kernel, scale])
-        cipher_x = modify_ndarray(encryptor.encrypt, [plain_x])
+        plain_kernel = modify_ndarray(ckks_encoder.encode, [kernel, scale], dim=4)
+        cipher_x = modify_ndarray(encryptor.encrypt, [plain_x], dim=4)
         cipher_dummy = encryptor.encrypt(plain_dummy)
         # cipher_kernel = modify_ndarray(encryptor.encrypt, [plain_kernel])
         end = time.time()
@@ -71,10 +75,10 @@ def _test(name, test_conv2d, batch=1, in_channel=1, out_channel=1, width=32, hei
     print(f'{name} time cost: {((end-start)*1000.):3f} ms')
     
     if 'HE' in name:
-        plain_result = modify_ndarray(decryptor.decrypt, [test_conv2d_result])
-        test_conv2d_result = modify_ndarray(ckks_encoder.decode, [plain_result])
+        plain_result = modify_ndarray(decryptor.decrypt, [test_conv2d_result], dim=4)
+        test_conv2d_result = modify_ndarray(ckks_encoder.decode, [plain_result], dim=4)
         end = time.time()
-        test_conv2d_result = modify_ndarray(get_mean, [test_conv2d_result])
+        test_conv2d_result = modify_ndarray(get_mean, [test_conv2d_result], dim=4)
         print(f'Decrypt time: {(end-start):3f} s')
 
     diff = np.subtract(test_conv2d_result, torch_conv2d_result.detach().numpy())
@@ -88,11 +92,11 @@ def _test(name, test_conv2d, batch=1, in_channel=1, out_channel=1, width=32, hei
             print('[Warning] The problem of cipher zero did not be solved!', file=sys.stderr)
             print('          It would increases accuracy loss!', file=sys.stderr)
             exit(1)
-
+'''
 def get_mean(x):
     return x.mean()
 
-def modify_ndarray(func, arg_list):
+def modify_ndarray4d(func, arg_list):
     assert(len(arg_list) > 0)
     assert(len(arg_list[0].shape) == 4)
     x = arg_list[0]
@@ -106,7 +110,7 @@ def modify_ndarray(func, arg_list):
                     _args = tuple(arg_list)
                     result[b][c][w][h] = func(*_args)
     return result
-
+'''
 if __name__=='__main__':    
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch', '-b', help='batch size', default=1, type=int)
