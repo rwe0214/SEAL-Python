@@ -92,25 +92,7 @@ def _test(name, test_conv2d, batch=1, in_channel=1, out_channel=1, width=32, hei
             print('[Warning] The problem of cipher zero did not be solved!', file=sys.stderr)
             print('          It would increases accuracy loss!', file=sys.stderr)
             exit(1)
-'''
-def get_mean(x):
-    return x.mean()
 
-def modify_ndarray4d(func, arg_list):
-    assert(len(arg_list) > 0)
-    assert(len(arg_list[0].shape) == 4)
-    x = arg_list[0]
-    result = np.empty(x.shape, dtype='object')
-
-    for b in range(x.shape[0]):
-        for c in range(x.shape[1]):
-            for w in range(x.shape[2]):
-                for h in range(x.shape[3]):
-                    arg_list[0] = x[b][c][w][h]
-                    _args = tuple(arg_list)
-                    result[b][c][w][h] = func(*_args)
-    return result
-'''
 if __name__=='__main__':    
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch', '-b', help='batch size', default=1, type=int)
