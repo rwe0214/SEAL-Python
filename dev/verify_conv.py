@@ -2,7 +2,7 @@ import time
 import sys
 import argparse
 
-from conv import *
+from nn.conv import *
 
 OUTPUT_VISIBLE = False
 
