@@ -1,16 +1,17 @@
+from .utils import HE_array_sum, modify_ndarray, get_mean, set_scale, kScale
+from seal import *
+
 import numpy as np
 import torch
 from torch import nn
 import time
 import math
 
-from utils import HE_array_sum, modify_ndarray, get_mean
-from seal import *
 
 # Use cipher dummy to approximate cipher zero
 FIX_CIPHER_ZERO = True
 
-def HE_naive_conv2d(x, kernel, evaluator, cipher_dummy, padding=0, stride=1):     
+def HE_naive_conv2d(x, kernel, evaluator, cipher_dummy, relin_keys, padding=0, stride=1):     
     # cipher_zero, check SEAL_THROW_ON_TRANSPARENT_CIPHERTEXT option in
     #     https://github.com/microsoft/SEAL/tree/607801221be3f8499d9d8bd93c06f8b201c98e0b#advanced-cmake-options 
     #     for detail.
@@ -29,8 +30,12 @@ def HE_naive_conv2d(x, kernel, evaluator, cipher_dummy, padding=0, stride=1):
             for w in range(result.shape[2]):
                 for h in range(result.shape[3]):
                     window = pad_x[b][:, w: w + kernel.shape[2], h: h + kernel.shape[3]]
-                    # result[b][c, w, h] = HE_array_sum(HE_dot_product_plain(window, kernel[c], evaluator), evaluator)
-                    result[b][c, w, h] = HE_array_sum(modify_ndarray(evaluator.multiply_plain, [window, kernel[c]], dim=3), evaluator)
+                    result[b][c, w, h] = modify_ndarray(evaluator.multiply_plain, [window, kernel[c]], dim=3)
+                    result[b][c, w, h] = modify_ndarray(evaluator.relinearize, [result[b][c, w, h], relin_keys], dim=3)
+                    result[b][c, w, h] = modify_ndarray(evaluator.rescale_to_next, [result[b][c, w, h]], dim=3)
+                    result[b][c][w][h] = HE_array_sum(result[b][c, w, h], evaluator)
+                    # TODO: BatchNorm
+                    # (x - a.running_mean) * (1 / a.running_var) * weight + bias
     return result
 
 def HE_conv2d(x, kernel, *args, **kwarg):
@@ -87,6 +92,7 @@ def _test(name, test_conv2d, batch=1, in_channel=1, out_channel=1, width=4, heig
     print(f'torch.nn.Conv2d time cost: {((end-start)*1000.):3f} ms\n')
 
     evaluator = None
+    relin_keys = None
     print(f'==> {name} forwarding...')
     if 'HE' in name:
         parms = EncryptionParameters(scheme_type.ckks)
@@ -105,6 +111,7 @@ def _test(name, test_conv2d, batch=1, in_channel=1, out_channel=1, width=4, heig
         keygen = KeyGenerator(context)
         public_key = keygen.create_public_key()
         secret_key = keygen.secret_key()
+        relin_keys = keygen.create_relin_keys()
 
         encryptor = Encryptor(context, public_key)
         evaluator = Evaluator(context)
@@ -124,7 +131,7 @@ def _test(name, test_conv2d, batch=1, in_channel=1, out_channel=1, width=4, heig
         dummy_value = cipher_dummy
     
     start = time.time()
-    test_conv2d_result = test_conv2d(x, kernel, evaluator, dummy_value, padding=padding, stride=stride)
+    test_conv2d_result = test_conv2d(x, kernel, evaluator, dummy_value, relin_keys, padding=padding, stride=stride)
     end = time.time()
     print(f'{name} time cost: {((end-start)*1000.):3f} ms')
     
