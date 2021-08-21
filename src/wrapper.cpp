@@ -555,6 +555,11 @@ PYBIND11_MODULE(seal, m)
 			encoder.encode(vec, scale, pt);
 			return pt;
 		})
+        .def("encode", [](CKKSEncoder &encoder, double value, parms_id_type parms_id, double scale){
+            Plaintext pt;
+            encoder.encode(value, parms_id, scale, pt);
+            return pt;
+        })
 		.def("encode", [](CKKSEncoder &encoder, double value, double scale){
 			Plaintext pt;
 			encoder.encode(value, scale, pt);
