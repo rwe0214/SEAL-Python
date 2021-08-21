@@ -6,6 +6,10 @@ sys.path.append(os.path.join(dirname, '../..'))
 
 from seal import *
 
+def set_scale(x: Ciphertext, scale):
+    x.scale(scale)
+    return x
+
 def get_mean(x: np.ndarray):
     return x.mean()
 
@@ -22,7 +26,10 @@ def _modify_ndarray4d(func, arg_list) -> np.ndarray:
                 for h in range(x.shape[3]):
                     arg_list[0] = x[b][c][w][h]
                     if type(y) is np.ndarray:
-                        arg_list[1] = y[b][c][w][h]
+                        if func.__name__ == 'mod_switch_to':
+                            arg_list[1] = y[b][c][w][h].parms_id()
+                        else:
+                            arg_list[1] = y[b][c][w][h]
                     _args = tuple(arg_list)
                     result[b][c][w][h] = func(*_args)
     return result
