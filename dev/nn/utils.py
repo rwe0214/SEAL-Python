@@ -1,10 +1,10 @@
 import numpy as np
 import os
 import sys
-dirname = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(dirname, '../..'))
 
 from seal import *
+
+kScale = 2.0**40
 
 def set_scale(x: Ciphertext, scale):
     x.scale(scale)
